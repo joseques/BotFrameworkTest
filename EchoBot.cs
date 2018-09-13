@@ -1,40 +1,41 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Bot;
 using Microsoft.Bot.Builder;
-using Microsoft.Bot.Builder.Core.Extensions;
 using Microsoft.Bot.Schema;
-using System.Net;
-using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace BotBuilderTest
 {
     public class EchoBot : IBot
     {
-        /// <summary>
-        /// Every Conversation turn for our EchoBot will call this method. In here
-        /// the bot checks the Activty type to verify it's a message, bumps the 
-        /// turn conversation 'Turn' count, and then echoes the users typing
-        /// back to them. 
-        /// </summary>
-        /// <param name="context">Turn scoped context containing all the data needed
-        /// for processing this conversation turn. </param>        
         public async Task OnTurn(ITurnContext context)
         {
-            // This bot is only handling Messages
+            //Handling Conversation updates
+            if (context.Activity.Type == ActivityTypes.ConversationUpdate)
+            {
+                //Hey, a new member got added (And not removed)
+                if (context.Activity.MembersAdded != null && context.Activity.MembersAdded.Any())
+                {
+                    //Running a captcha to see if it isn't a bot 🤖
+                    ChannelAccount memberAdded = context.Activity.MembersAdded.ToList().Find(newMember => newMember.Id != context.Activity.Recipient.Id);
+                    if(memberAdded != null)
+                        //Greet the user and explain the bots purpose
+                        await context.SendActivity($"Welcome {memberAdded.Name}. My purpose is to count how many times you repeat a word in your message.\nGo Ahead and send me some text!");
+                }
+            }
+            // Handling Messages
             if (context.Activity.Type == ActivityTypes.Message)
             {
-                // Echo back to the user whatever they typed.
+                // Echo back to the user the count of whatever were typed.
                 await context.SendActivity(countWordsOfText(context.Activity.Text));
             }
         }
         public string countWordsOfText(string text)
         {
-            List<string> wordList = new List<string>(text.Replace("\n"," ").Split(" "));                
-            var result = from x in wordList
+            List<string> wordList = new List<string>(text.Replace("\n"," ").Split(" "));
+            //Lets count duplicated words
+            var result =    from x in wordList
                             group x by x into g
                             let count = g.Count()
                             orderby count descending

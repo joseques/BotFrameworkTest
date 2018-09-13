@@ -4,6 +4,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Bot.Builder.Core.Extensions;
 
 namespace BotBuilderTest
 {
@@ -27,6 +28,8 @@ namespace BotBuilderTest
             // Handling Messages
             if (context.Activity.Type == ActivityTypes.Message)
             {
+                var state = context.GetConversationState<CountState>();
+
                 // Echo back to the user the count of whatever were typed.
                 await context.SendActivity(countWordsOfText(context.Activity.Text));
             }

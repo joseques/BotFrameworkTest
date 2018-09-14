@@ -5,6 +5,7 @@ using Microsoft.Bot.Schema;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Bot.Builder.Core.Extensions;
+using System.Text.RegularExpressions;
 
 namespace BotBuilderTest
 {
@@ -28,23 +29,33 @@ namespace BotBuilderTest
             // Handling Messages
             if (context.Activity.Type == ActivityTypes.Message)
             {
+                string finalAnswer = "I can't process things that aren't text. Try sending me some words!";
                 string text = context.Activity.Text;
                 if (!string.IsNullOrEmpty(text)) {
                     List<CountState> state = context.GetConversationState<List<CountState>>();
                     // Text to lowercase, trimmed start and end spaces and replace some characters that make the spliting wrong
-                    string message = context.Activity.Text.ToLowerInvariant().Trim().Replace(".", "").Replace(",", "").Replace("?", "");
+                    string message = context.Activity.Text.ToLowerInvariant();
                     // Echo back to the user the count of whatever were typed.
-                    await context.SendActivity(countWordsOfText(message, state));
-                } else
-                {
-                    await context.SendActivity("I can't process things that aren't text. Try sending me some words! 🤖");
+                    string resultCount = countWordsOfText(message, state);
+                    if (!string.IsNullOrEmpty(resultCount))
+                    {
+                        finalAnswer = resultCount;
+                    }
                 }
+                await context.SendActivity(finalAnswer);
             }
         }
         public string countWordsOfText(string text, List<CountState> currentState)
         {
-            //A Regex could be used to split the text in \w boundaries but I prefer this simpler method
-            List<string> wordList = new List<string>(text.Replace("\n"," ").Split(" "));
+            string multipleSpacesPattern = "\\s\\s+";
+            string notWordPattern = "\\W";
+            Regex rgx = new Regex(notWordPattern);
+            text = rgx.Replace(text, " ");
+            //Since the replacement fills the string with multiple spaces, we run another replacing the spaces with a single one
+            //Could be solved with a more complex regex and a single Replace
+            rgx = new Regex(multipleSpacesPattern);
+            text = rgx.Replace(text, " ");
+            List<string> wordList = new List<string>(text.Split(" "));
             //Lets count duplicated words
             var result =    from x in wordList
                             group x by x into g
@@ -56,16 +67,17 @@ namespace BotBuilderTest
             {   
                 //if found its in list, add the count to the existing element. Otherwise add a new one
                 int index = currentState.FindIndex(st => st.Word == item.Word);
-                if (index > -1)
-                {
-                    currentState[index].Count += item.Count;
-                }
-                else
-                {
-                    currentState.Add(new CountState());
-                    currentState.Last().Word = item.Word;
-                    currentState.Last().Count += item.Count;
-                }
+                if (item.Word.Length > 0)
+                    if (index > -1) //Word isn't empty
+                    {
+                        currentState[index].Count += item.Count;
+                    }
+                    else
+                    {
+                        currentState.Add(new CountState());
+                        currentState.Last().Word = item.Word;
+                        currentState.Last().Count += item.Count;
+                    }
             }
             currentState = currentState.OrderByDescending(x=>x.Count).ToList();
             foreach(CountState cs in currentState)

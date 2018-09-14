@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace BotBuilderTest
 {
-    public class EchoBot : IBot
+    public class WordCountBot : IBot
     {
         public async Task OnTurn(ITurnContext context)
         {

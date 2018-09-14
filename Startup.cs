@@ -52,7 +52,7 @@ namespace BotBuilderTest
 
                 // The File data store, shown here, is suitable for bots that run on 
                 // a single machine and need durable state across application restarts.                 
-                // IStorage dataStore = new FileStorage(System.IO.Path.GetTempPath());
+                //IStorage dataStore = new FileStorage(System.IO.Path.GetTempPath());
 
                 // For production bots use the Azure Table Store, Azure Blob, or 
                 // Azure CosmosDB storage provides, as seen below. To include any of 

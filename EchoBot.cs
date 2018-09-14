@@ -22,20 +22,28 @@ namespace BotBuilderTest
                     ChannelAccount memberAdded = context.Activity.MembersAdded.ToList().Find(newMember => newMember.Id != context.Activity.Recipient.Id);
                     if(memberAdded != null)
                         //Greet the user and explain the bots purpose
-                        await context.SendActivity($"Welcome {memberAdded.Name}. My purpose is to count how many times you repeated words in your messages.\nGo Ahead and send me some text!");
+                        await context.SendActivity($"Welcome {memberAdded.Name}. My purpose is to count how many times you repeated words in your messages.\nGo Ahead and send me some text! 🤖");
                 }
             }
             // Handling Messages
             if (context.Activity.Type == ActivityTypes.Message)
             {
-                List<CountState> state = context.GetConversationState<List<CountState>>();
-                string message = context.Activity.Text.ToLowerInvariant().Replace(".", "").Replace(",", "").Replace("?","");
-                // Echo back to the user the count of whatever were typed.
-                await context.SendActivity(countWordsOfText(message, state));
+                string text = context.Activity.Text;
+                if (!string.IsNullOrEmpty(text)) {
+                    List<CountState> state = context.GetConversationState<List<CountState>>();
+                    // Text to lowercase, trimmed start and end spaces and replace some characters that make the spliting wrong
+                    string message = context.Activity.Text.ToLowerInvariant().Trim().Replace(".", "").Replace(",", "").Replace("?", "");
+                    // Echo back to the user the count of whatever were typed.
+                    await context.SendActivity(countWordsOfText(message, state));
+                } else
+                {
+                    await context.SendActivity("I can't process things that aren't text. Try sending me some words! 🤖");
+                }
             }
         }
         public string countWordsOfText(string text, List<CountState> currentState)
         {
+            //A Regex could be used to split the text in \w boundaries but I prefer this simpler method
             List<string> wordList = new List<string>(text.Replace("\n"," ").Split(" "));
             //Lets count duplicated words
             var result =    from x in wordList
@@ -45,20 +53,18 @@ namespace BotBuilderTest
                             select new { Word = g.Key, Count = count };
             string finalString = "";
             foreach (var item in result)
-            {
+            {   
+                //if found its in list, add the count to the existing element. Otherwise add a new one
                 int index = currentState.FindIndex(st => st.Word == item.Word);
-                CountState state = new CountState();
                 if (index > -1)
                 {
                     currentState[index].Count += item.Count;
-                    state = currentState[index];
                 }
                 else
                 {
-                    currentState.Add(state);
+                    currentState.Add(new CountState());
                     currentState.Last().Word = item.Word;
                     currentState.Last().Count += item.Count;
-                    state = currentState.Last();
                 }
             }
             currentState = currentState.OrderByDescending(x=>x.Count).ToList();

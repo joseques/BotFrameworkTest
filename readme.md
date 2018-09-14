@@ -1,2 +1,2 @@
-﻿# EchoBot hosted in ASP.NET Core
-This sample shows how to integrate a simple EchoBot bot with ASP.Net Core 2. 
+﻿# Word counter Bot test project
+This a test project. The bot has the ability to count words through a whole conversation persisting the results between turns.

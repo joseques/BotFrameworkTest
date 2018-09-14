@@ -5,7 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.5" />
+    <Compile Remove="BotApplicationTest\**" />
+    <Content Remove="BotApplicationTest\**" />
+    <EmbeddedResource Remove="BotApplicationTest\**" />
+    <None Remove="BotApplicationTest\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.9" />
     <PackageReference Include="Microsoft.Bot.Builder.Core" Version="4.0.1-preview" />
     <PackageReference Include="Microsoft.Bot.Builder.Core.Extensions" Version="4.0.1-preview" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.0.1-preview" />

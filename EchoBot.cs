@@ -22,19 +22,19 @@ namespace BotBuilderTest
                     ChannelAccount memberAdded = context.Activity.MembersAdded.ToList().Find(newMember => newMember.Id != context.Activity.Recipient.Id);
                     if(memberAdded != null)
                         //Greet the user and explain the bots purpose
-                        await context.SendActivity($"Welcome {memberAdded.Name}. My purpose is to count how many times you repeat a word in your message.\nGo Ahead and send me some text!");
+                        await context.SendActivity($"Welcome {memberAdded.Name}. My purpose is to count how many times you repeated words in your messages.\nGo Ahead and send me some text!");
                 }
             }
             // Handling Messages
             if (context.Activity.Type == ActivityTypes.Message)
             {
-                var state = context.GetConversationState<CountState>();
-
+                List<CountState> state = context.GetConversationState<List<CountState>>();
+                string message = context.Activity.Text.ToLowerInvariant().Replace(".", "").Replace(",", "").Replace("?","");
                 // Echo back to the user the count of whatever were typed.
-                await context.SendActivity(countWordsOfText(context.Activity.Text));
+                await context.SendActivity(countWordsOfText(message, state));
             }
         }
-        public string countWordsOfText(string text)
+        public string countWordsOfText(string text, List<CountState> currentState)
         {
             List<string> wordList = new List<string>(text.Replace("\n"," ").Split(" "));
             //Lets count duplicated words
@@ -42,11 +42,29 @@ namespace BotBuilderTest
                             group x by x into g
                             let count = g.Count()
                             orderby count descending
-                            select new { Value = g.Key, Count = count };
+                            select new { Word = g.Key, Count = count };
             string finalString = "";
             foreach (var item in result)
             {
-                finalString += $"\n{item.Value} - {item.Count}";
+                int index = currentState.FindIndex(st => st.Word == item.Word);
+                CountState state = new CountState();
+                if (index > -1)
+                {
+                    currentState[index].Count += item.Count;
+                    state = currentState[index];
+                }
+                else
+                {
+                    currentState.Add(state);
+                    currentState.Last().Word = item.Word;
+                    currentState.Last().Count += item.Count;
+                    state = currentState.Last();
+                }
+            }
+            currentState = currentState.OrderByDescending(x=>x.Count).ToList();
+            foreach(CountState cs in currentState)
+            {
+                finalString += $"\n{cs.Word} - {cs.Count}";
             }
             return finalString;
         }
